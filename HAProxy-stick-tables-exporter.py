@@ -325,12 +325,16 @@ class haproxy_Stats(object):
 
             self.conn_rate = {}
             for line in config.split('\n'):
-                if 'listen' in line.lower():
+                # skip comments lines
+                if line.startswith('#'): 
+                    continue
+                if 'listen' in line.lower() or 'frontend' in line.lower() or 'backend' in line.lower():
                     current_block = line.split(' ')[1]
                     self.conn_rate[current_block] = {}
-                elif 'tcp-request content reject if' in line.lower():
+                # search for limits section for the stick tables
+                elif re.compile(r'(http-request\s+(allow|deny(\s+deny_status\s+\d+)?)|tcp-request\s+(content|connection)?\s+(accept|reject))\s+if').match(line.lower()):
                     p = re.compile(
-                        r'{\s+(src_)?(?P<type>\w+)\s+'
+                        r'{\s+sc_(?P<type>\w+)\(\d+\)\s+'
                         r'(?P<action>\w+)\s+(?P<value>\w+)'
                         )
                     m = p.search(line)
